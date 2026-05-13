@@ -1,11 +1,38 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { articles, categoryColors, type Category } from "@/data/articles";
 import JournalHeader from "@/components/JournalHeader";
+import Icon from "@/components/ui/icon";
+import { useAuth } from "@/contexts/AuthContext";
+import { API_URL } from "@/lib/auth";
 
 export default function ArticlePage() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated, accessToken } = useAuth();
+  const [saved, setSaved] = useState(false);
+  const [savingState, setSavingState] = useState(false);
   const article = articles.find((a) => a.slug === slug);
+
+  useEffect(() => {
+    if (!accessToken || !slug) return;
+    fetch(`${API_URL}?action=saved`, { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then(r => r.json())
+      .then(d => setSaved((d.slugs || []).includes(slug)));
+  }, [accessToken, slug]);
+
+  const toggleSave = async () => {
+    if (!isAuthenticated) { alert("Войдите, чтобы сохранять статьи"); return; }
+    setSavingState(true);
+    const action = saved ? "unsave" : "save";
+    await fetch(`${API_URL}?action=${action}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ slug }),
+    });
+    setSaved(!saved);
+    setSavingState(false);
+  };
 
   if (!article) {
     return (
@@ -31,9 +58,19 @@ export default function ArticlePage() {
           >
             ← Все статьи
           </button>
-          <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-sm font-medium ${categoryColors[article.category as Category]}`}>
-            {article.category}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-sm font-medium ${categoryColors[article.category as Category]}`}>
+              {article.category}
+            </span>
+            <button
+              onClick={toggleSave}
+              disabled={savingState}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-colors cursor-pointer ${saved ? "bg-black text-white border-black" : "border-neutral-300 text-neutral-600 hover:border-neutral-500"}`}
+            >
+              <Icon name={saved ? "BookmarkCheck" : "Bookmark"} size={13} />
+              {saved ? "Сохранено" : "Сохранить"}
+            </button>
+          </div>
         </div>
       </header>
 

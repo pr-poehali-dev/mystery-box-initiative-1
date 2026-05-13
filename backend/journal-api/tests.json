@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "List published articles",
+      "method": "GET",
+      "path": "/?action=list",
+      "expectedStatus": 200,
+      "expectedBody": {"articles": []},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
