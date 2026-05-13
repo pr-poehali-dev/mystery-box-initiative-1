@@ -27,9 +27,9 @@ export default function Featured() {
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center min-h-[60vh] px-6 py-12 lg:py-0">
         <div className="flex-1 h-[400px] lg:h-[700px] mb-8 lg:mb-0 lg:order-2">
           <img
-            src="https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/files/ea7e915b-73d9-4a1d-ab23-8cda36f53729.jpg"
+            src="https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/files/3ea499f3-d1c3-4aa9-a7e5-87e5ab922c58.jpg"
             alt="Традиции России"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover grayscale"
           />
         </div>
         <div className="flex-1 text-left lg:h-[700px] flex flex-col justify-center lg:mr-12 lg:order-1">
