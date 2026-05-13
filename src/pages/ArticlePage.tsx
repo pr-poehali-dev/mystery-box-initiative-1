@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { articles, categoryColors, type Category } from "@/data/articles";
+import JournalHeader from "@/components/JournalHeader";
 
 export default function ArticlePage() {
   const { slug } = useParams();
@@ -21,13 +22,14 @@ export default function ArticlePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-neutral-200">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <JournalHeader />
+      <header className="bg-white border-b border-neutral-100 px-6 py-2">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
           <button
             onClick={() => navigate("/")}
-            className="text-xs uppercase tracking-widest text-neutral-500 hover:text-black transition-colors flex items-center gap-2"
+            className="text-xs text-neutral-500 hover:text-black transition-colors flex items-center gap-2"
           >
-            ← Открой свою Россию
+            ← Все статьи
           </button>
           <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-sm font-medium ${categoryColors[article.category as Category]}`}>
             {article.category}
@@ -35,7 +37,7 @@ export default function ArticlePage() {
         </div>
       </header>
 
-      <div className="pt-14">
+      <div>
         <div className="relative h-[55vh] overflow-hidden">
           <img
             src={article.image}

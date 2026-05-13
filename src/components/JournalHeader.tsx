@@ -1,0 +1,61 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Icon from "@/components/ui/icon";
+
+export default function JournalHeader() {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState(false);
+
+  return (
+    <header className="sticky top-0 z-50 bg-white border-b border-neutral-200">
+      <div className="flex items-center justify-between px-4 h-14 gap-4">
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-1 shrink-0 cursor-pointer"
+        >
+          <span className="text-2xl font-black tracking-tighter leading-none text-black">О·Р</span>
+          <span className="text-[10px] bg-black text-white px-1.5 py-0.5 font-bold uppercase tracking-wide ml-1">
+            журнал
+          </span>
+        </button>
+
+        <div className="hidden md:flex items-center gap-1 flex-1 max-w-xl">
+          {[
+            { label: "Традиции", emoji: "🎭" },
+            { label: "Кухня", emoji: "🍵" },
+            { label: "Люди", emoji: "👤" },
+            { label: "Места", emoji: "📍" },
+            { label: "Народы", emoji: "🌍" },
+          ].map((item) => (
+            <button
+              key={item.label}
+              onClick={() => navigate("/")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-neutral-700 hover:bg-neutral-100 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <span>{item.emoji}</span>
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {search ? (
+            <input
+              autoFocus
+              onBlur={() => setSearch(false)}
+              placeholder="Поиск..."
+              className="border border-neutral-300 rounded-full px-3 py-1 text-sm outline-none w-40"
+            />
+          ) : (
+            <button onClick={() => setSearch(true)} className="p-2 hover:bg-neutral-100 rounded-full cursor-pointer">
+              <Icon name="Search" size={18} className="text-neutral-600" />
+            </button>
+          )}
+          <button className="hidden sm:flex bg-neutral-900 text-white text-sm px-4 py-1.5 rounded-full font-medium hover:bg-neutral-700 transition-colors cursor-pointer">
+            Подписаться
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
