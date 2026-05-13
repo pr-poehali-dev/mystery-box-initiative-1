@@ -11,7 +11,7 @@ const regions = [
     accent: "#1e3a5f",
     desc: "Глубочайшее озеро планеты. Чистейшая вода, нерпы, омуль и бесконечный горизонт — место, которое меняет взгляд на мир.",
     facts: ["Глубина 1642 м", "20% мировых запасов пресной воды", "Более 1700 видов животных"],
-    image: "https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/files/33c9d23e-f51b-4eff-bb46-cbef2aa5e853.jpg",
+    image: "https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/files/5e162ab2-3eab-48f3-aed5-2fb89d49d851.jpg",
   },
   {
     id: "caucasus",
@@ -22,7 +22,7 @@ const regions = [
     accent: "#78350f",
     desc: "Гостеприимство, которого нет нигде. Хинкал, шашлык, свежий сулугуни и горячий чай с видом на Эльбрус.",
     facts: ["Эльбрус — 5642 м", "Более 50 народностей", "Старейшие виноградники России"],
-    image: "https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/files/7eefe37f-35e3-4021-af18-1d90200b1ebb.jpg",
+    image: "https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/files/83f91b03-eb3f-4b17-9798-485488b5ba76.jpg",
   },
   {
     id: "altai",
@@ -33,7 +33,7 @@ const regions = [
     accent: "#14532d",
     desc: "Горы, степи, ледники и бирюзовые реки. Алтай — место силы, где шаманские традиции живут рядом с современностью.",
     facts: ["ЮНЕСКО: объект Всемирного наследия", "Телецкое озеро — Сибирский Байкал", "Родина скифского золота"],
-    image: "https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/files/33c9d23e-f51b-4eff-bb46-cbef2aa5e853.jpg",
+    image: "https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/files/c7fd8e26-9e2c-4b85-83ad-c538e4ffd2bf.jpg",
   },
   {
     id: "golden-ring",
@@ -44,7 +44,7 @@ const regions = [
     accent: "#713f12",
     desc: "Суздаль, Владимир, Ростов Великий — белокаменные соборы XII века, купеческие особняки и запах свежего хлеба из русской печи.",
     facts: ["8 древних городов", "Самый старый — Ростов Великий (862 год)", "Центр православного паломничества"],
-    image: "https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/files/7eefe37f-35e3-4021-af18-1d90200b1ebb.jpg",
+    image: "https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/files/31262af3-02c2-4fa3-9b8c-8f1b2e5e350d.jpg",
   },
   {
     id: "kamchatka",
@@ -55,7 +55,7 @@ const regions = [
     accent: "#7f1d1d",
     desc: "Огнедышащие вулканы, гейзеры и медведи у рек. Край света, где природа живёт по своим правилам.",
     facts: ["29 действующих вулканов", "Долина гейзеров — 2-й по размеру гейзерный район мира", "Нерестовые реки с тысячами лососей"],
-    image: "https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/files/33c9d23e-f51b-4eff-bb46-cbef2aa5e853.jpg",
+    image: "https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/files/fe7bf74f-3a0c-4f55-9317-cb6d34af950d.jpg",
   },
   {
     id: "karelia",
@@ -66,7 +66,7 @@ const regions = [
     accent: "#1e293b",
     desc: "Тысячи озёр, древние карельские деревни, северное сияние и деревянный остров Кижи — архитектурное чудо без единого гвоздя.",
     facts: ["Более 60 000 озёр", "Кижи — под защитой ЮНЕСКО", "Белые ночи с июня по июль"],
-    image: "https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/files/7eefe37f-35e3-4021-af18-1d90200b1ebb.jpg",
+    image: "https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/files/b9d02d1c-88b5-47d8-a96f-2887229877e3.jpg",
   },
 ];
 
