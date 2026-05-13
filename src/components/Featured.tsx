@@ -1,57 +1,62 @@
-const features = [
+const topics = [
   {
-    icon: "🏔️",
-    title: "Природа",
-    desc: "От Байкала до Камчатки — дикая и величественная красота, которую нужно увидеть своими глазами.",
+    tag: "Традиции",
+    title: "Масленица",
+    desc: "Древний праздник проводов зимы — блины, хороводы и сжигание чучела. Его отмечают по всей стране, но везде по-своему.",
   },
   {
-    icon: "🍵",
-    title: "Вкусы",
-    desc: "Сибирские пельмени, бурятский бухлёр, дагестанский хинкал — у каждого региона своя кухня.",
+    tag: "Кухня",
+    title: "Щи да каша",
+    desc: "Русская кухня — это не просто еда. Это архив памяти: каждый рецепт хранит историю семьи, деревни, целого народа.",
   },
   {
-    icon: "🎭",
-    title: "Традиции",
-    desc: "Масленица, Ысыах, Навруз — Россия хранит живые традиции десятков народов и культур.",
-  },
-  {
-    icon: "🏛️",
-    title: "История",
-    desc: "Древние города, монастыри, кремли и деревянное зодчество — тысяча лет в каждом камне.",
+    tag: "Люди",
+    title: "Хранители",
+    desc: "Мастера, знахарки, сказители — люди, которые передают живое знание из рук в руки, из уст в уста.",
   },
 ];
 
 export default function Featured() {
   return (
-    <div id="traditions" className="min-h-screen bg-white">
-      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center min-h-[60vh] px-6 py-12 lg:py-0">
-        <div className="flex-1 h-[400px] lg:h-[700px] mb-8 lg:mb-0 lg:order-2">
+    <div id="traditions" className="bg-[#f5f0e8]">
+      <div className="flex flex-col lg:flex-row min-h-screen">
+        <div className="lg:w-1/2 h-[50vh] lg:h-auto relative overflow-hidden">
           <img
             src="https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/files/3ea499f3-d1c3-4aa9-a7e5-87e5ab922c58.jpg"
             alt="Традиции России"
             className="w-full h-full object-cover grayscale"
           />
-        </div>
-        <div className="flex-1 text-left lg:h-[700px] flex flex-col justify-center lg:mr-12 lg:order-1">
-          <h3 className="uppercase mb-4 text-sm tracking-wide text-neutral-500">Познакомься с настоящей Россией</h3>
-          <p className="text-2xl lg:text-4xl mb-8 text-neutral-900 leading-tight">
-            Россия — это не одна страна, а целая вселенная народов, языков, пейзажей и вкусов.
-            Мы помогаем открыть её с неожиданной стороны.
-          </p>
-          <button className="bg-black text-white border border-black px-6 py-3 text-sm transition-all duration-300 hover:bg-white hover:text-black cursor-pointer w-fit uppercase tracking-wide">
-            Выбрать маршрут
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0 border-t border-neutral-200">
-        {features.map((f) => (
-          <div key={f.title} className="p-8 border-r border-neutral-200 last:border-r-0 hover:bg-neutral-50 transition-colors duration-300">
-            <div className="text-4xl mb-4">{f.icon}</div>
-            <h4 className="text-lg font-bold mb-3 uppercase tracking-wide">{f.title}</h4>
-            <p className="text-neutral-600 text-sm leading-relaxed">{f.desc}</p>
+          <div className="absolute inset-0 bg-black/10" />
+          <div className="absolute bottom-8 left-8">
+            <span className="text-white text-xs uppercase tracking-widest bg-black/60 px-3 py-1 backdrop-blur-sm">
+              Фото редакции
+            </span>
           </div>
-        ))}
+        </div>
+
+        <div className="lg:w-1/2 flex flex-col justify-between p-10 lg:p-16">
+          <div>
+            <p className="uppercase text-xs tracking-[0.4em] text-neutral-400 mb-6">О журнале</p>
+            <h2 className="text-3xl lg:text-5xl font-bold text-neutral-900 leading-tight mb-6">
+              Россия — это сотни живых культур внутри одной страны
+            </h2>
+            <p className="text-neutral-600 leading-relaxed text-base lg:text-lg">
+              Мы не пишем о достопримечательностях. Мы пишем о людях, которые пекут хлеб по рецептам прабабушек, водят хороводы в чистый понедельник и знают, как правильно солить грибы.
+            </p>
+          </div>
+
+          <div className="mt-10 space-y-0 border-t border-neutral-300">
+            {topics.map((t) => (
+              <div key={t.title} className="flex gap-6 py-6 border-b border-neutral-200 group cursor-pointer hover:bg-neutral-100 -mx-4 px-4 transition-colors duration-200">
+                <span className="text-xs uppercase tracking-widest text-neutral-400 w-20 shrink-0 pt-1">{t.tag}</span>
+                <div>
+                  <h4 className="font-bold text-neutral-900 mb-1 group-hover:underline underline-offset-2">{t.title}</h4>
+                  <p className="text-sm text-neutral-500 leading-relaxed">{t.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
