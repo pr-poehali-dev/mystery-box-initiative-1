@@ -254,14 +254,21 @@ def handler(event: dict, context) -> dict:
             UPDATE articles_db
             SET status = 'published', published_at = NOW(), updated_at = NOW()
             WHERE id = %s
-            RETURNING id, slug
+            RETURNING id, slug, title, author_id
         """, (int(article_id),))
         row = cur.fetchone()
+        if not row:
+            conn.commit()
+            conn.close()
+            return error("article not found", 404)
+        art_id, slug, title, author_id = row
+        cur.execute("""
+            INSERT INTO notifications (user_id, type, message, article_id)
+            VALUES (%s, 'approved', %s, %s)
+        """, (author_id, f'Ваша статья «{title}» одобрена и опубликована!', art_id))
         conn.commit()
         conn.close()
-        if not row:
-            return error("article not found", 404)
-        return json_response({"ok": True, "slug": row[1]})
+        return json_response({"ok": True, "slug": slug})
 
     # POST /reject — отклонить статью (только admin)
     if action == "reject" and method == "POST":
@@ -284,13 +291,85 @@ def handler(event: dict, context) -> dict:
             UPDATE articles_db
             SET status = 'draft', updated_at = NOW()
             WHERE id = %s
-            RETURNING id
+            RETURNING id, title, author_id
         """, (int(article_id),))
         row = cur.fetchone()
+        if not row:
+            conn.commit()
+            conn.close()
+            return error("article not found", 404)
+        art_id, title, author_id = row
+        msg = f'Статья «{title}» возвращена на доработку.'
+        if reason:
+            msg += f' Причина: {reason}'
+        cur.execute("""
+            INSERT INTO notifications (user_id, type, message, article_id)
+            VALUES (%s, 'rejected', %s, %s)
+        """, (author_id, msg, art_id))
         conn.commit()
         conn.close()
+        return json_response({"ok": True})
+
+    # POST /delete-article — удалить статью (только admin)
+    if action == "delete-article" and method == "POST":
+        user = get_user_from_token(event)
+        if not user:
+            return error("unauthorized", 401)
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT role FROM users WHERE id = %s", (int(user["sub"]),))
+        row = cur.fetchone()
+        if not row or row[0] != "admin":
+            conn.close()
+            return error("forbidden", 403)
+        article_id = body.get("id")
+        if not article_id:
+            conn.close()
+            return error("id required")
+        cur.execute("UPDATE articles_db SET status = 'deleted', updated_at = NOW() WHERE id = %s RETURNING id, title, author_id", (int(article_id),))
+        row = cur.fetchone()
         if not row:
-            return error("article not found or already processed", 404)
+            conn.commit()
+            conn.close()
+            return error("article not found", 404)
+        art_id, title, author_id = row
+        cur.execute("""
+            INSERT INTO notifications (user_id, type, message, article_id)
+            VALUES (%s, 'deleted', %s, %s)
+        """, (author_id, f'Статья «{title}» была удалена модератором.', art_id))
+        conn.commit()
+        conn.close()
+        return json_response({"ok": True})
+
+    # GET /notifications — уведомления текущего пользователя
+    if action == "notifications" and method == "GET":
+        user = get_user_from_token(event)
+        if not user:
+            return error("unauthorized", 401)
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, type, message, article_id, is_read, created_at
+            FROM notifications
+            WHERE user_id = %s
+            ORDER BY created_at DESC
+            LIMIT 20
+        """, (int(user["sub"]),))
+        rows = cur.fetchall()
+        cols = ["id", "type", "message", "article_id", "is_read", "created_at"]
+        conn.close()
+        return json_response({"notifications": [dict(zip(cols, r)) for r in rows]})
+
+    # POST /mark-read — пометить уведомления прочитанными
+    if action == "mark-read" and method == "POST":
+        user = get_user_from_token(event)
+        if not user:
+            return error("unauthorized", 401)
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("UPDATE notifications SET is_read = TRUE WHERE user_id = %s AND is_read = FALSE", (int(user["sub"]),))
+        conn.commit()
+        conn.close()
         return json_response({"ok": True})
 
     return error("unknown action", 404)

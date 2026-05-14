@@ -3,40 +3,54 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_URL } from "@/lib/auth";
 import JournalHeader from "@/components/JournalHeader";
-import { articles as staticArticles } from "@/data/articles";
 import Icon from "@/components/ui/icon";
 
-type Tab = "saved" | "my-articles";
+type Tab = "my-articles" | "notifications";
+type MyArticle = { id: number; slug: string; title: string; category: string; status: string; read_time: number; created_at: string; published_at: string | null };
+type Notification = { id: number; type: string; message: string; article_id: number | null; is_read: boolean; created_at: string };
 
 export default function Profile() {
   const { user, isAuthenticated, isLoading, logout, accessToken } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("saved");
-  const [savedSlugs, setSavedSlugs] = useState<string[]>([]);
-  type MyArticle = {id:number;slug:string;title:string;category:string;status:string;read_time:number;created_at:string;published_at:string|null};
+  const [tab, setTab] = useState<Tab>("my-articles");
   const [myArticles, setMyArticles] = useState<MyArticle[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) navigate("/");
-  }, [isLoading, isAuthenticated]);
+  }, [isLoading, isAuthenticated, navigate]);
 
   useEffect(() => {
     if (!accessToken) return;
     setDataLoading(true);
-
     const headers = { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" };
-
     Promise.all([
-      fetch(`${API_URL}?action=saved`, { headers }).then(r => r.json()),
       fetch(`${API_URL}?action=my-articles`, { headers }).then(r => r.json()),
-    ]).then(([savedData, myData]) => {
-      setSavedSlugs(savedData.slugs || []);
+      fetch(`${API_URL}?action=notifications`, { headers }).then(r => r.json()),
+    ]).then(([myData, notifData]) => {
       setMyArticles(myData.articles || []);
+      setNotifications(notifData.notifications || []);
     }).finally(() => setDataLoading(false));
   }, [accessToken]);
 
-  const savedArticles = staticArticles.filter(a => savedSlugs.includes(a.slug));
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const markAllRead = async () => {
+    if (!accessToken || unreadCount === 0) return;
+    await fetch(`${API_URL}?action=mark-read`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    });
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+  };
+
+  const notifIcon = (type: string) => {
+    if (type === "approved") return { icon: "CheckCircle", color: "text-green-500" };
+    if (type === "rejected") return { icon: "XCircle", color: "text-amber-500" };
+    if (type === "deleted") return { icon: "Trash2", color: "text-red-500" };
+    return { icon: "Bell", color: "text-neutral-400" };
+  };
 
   if (isLoading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -88,43 +102,30 @@ export default function Profile() {
         </div>
 
         <div className="flex gap-1 mb-6 bg-white border border-neutral-200 rounded-xl p-1 w-fit">
-          {([["saved", "Сохранённые"], ["my-articles", "Мои статьи"]] as [Tab, string][]).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${tab === key ? "bg-black text-white" : "text-neutral-600 hover:text-black"}`}
-            >
-              {label}
-            </button>
-          ))}
+          <button
+            onClick={() => setTab("my-articles")}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${tab === "my-articles" ? "bg-black text-white" : "text-neutral-600 hover:text-black"}`}
+          >
+            Мои статьи
+          </button>
+          <button
+            onClick={() => { setTab("notifications"); markAllRead(); }}
+            className={`relative px-5 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${tab === "notifications" ? "bg-black text-white" : "text-neutral-600 hover:text-black"}`}
+          >
+            Уведомления
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                {unreadCount}
+              </span>
+            )}
+          </button>
         </div>
 
         {dataLoading ? (
           <div className="flex justify-center py-16">
             <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : tab === "saved" ? (
-          savedArticles.length === 0 ? (
-            <div className="text-center py-20 text-neutral-400">
-              <Icon name="Bookmark" size={40} className="mx-auto mb-3 opacity-30" />
-              <p>Нет сохранённых статей</p>
-              <button onClick={() => navigate("/")} className="mt-4 text-sm text-black underline cursor-pointer">Читать журнал</button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {savedArticles.map(a => (
-                <div key={a.id} onClick={() => navigate(`/article/${a.slug}`)}
-                  className="bg-white rounded-xl border border-neutral-200 overflow-hidden cursor-pointer hover:border-neutral-400 transition-colors group">
-                  <img src={a.image} alt={a.title} className="w-full h-36 object-cover group-hover:scale-[1.02] transition-transform duration-300" />
-                  <div className="p-4">
-                    <span className="text-xs text-neutral-400 uppercase tracking-wider">{a.category}</span>
-                    <h3 className="font-semibold text-sm mt-1 leading-snug group-hover:underline">{a.title}</h3>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
-        ) : (
+        ) : tab === "my-articles" ? (
           myArticles.length === 0 ? (
             <div className="text-center py-20 text-neutral-400">
               <Icon name="FileText" size={40} className="mx-auto mb-3 opacity-30" />
@@ -152,6 +153,31 @@ export default function Profile() {
                   </button>
                 </div>
               ))}
+            </div>
+          )
+        ) : (
+          notifications.length === 0 ? (
+            <div className="text-center py-20 text-neutral-400">
+              <Icon name="Bell" size={40} className="mx-auto mb-3 opacity-30" />
+              <p>Нет уведомлений</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {notifications.map(n => {
+                const { icon, color } = notifIcon(n.type);
+                return (
+                  <div key={n.id} className={`bg-white rounded-xl border p-4 flex items-start gap-3 transition-colors ${n.is_read ? "border-neutral-200" : "border-neutral-300 bg-neutral-50"}`}>
+                    <Icon name={icon} size={20} className={`${color} shrink-0 mt-0.5`} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm ${n.is_read ? "text-neutral-600" : "text-neutral-900 font-medium"}`}>{n.message}</p>
+                      <p className="text-xs text-neutral-400 mt-1">
+                        {new Date(n.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                    {!n.is_read && <div className="w-2 h-2 rounded-full bg-red-500 shrink-0 mt-1.5" />}
+                  </div>
+                );
+              })}
             </div>
           )
         )}
