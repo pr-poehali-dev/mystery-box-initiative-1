@@ -61,7 +61,16 @@ export default function Profile() {
             <h1 className="text-xl font-bold">{user?.name || "Пользователь"}</h1>
             <p className="text-neutral-500 text-sm">{user?.email}</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2">
+            {(user as { role?: string })?.role === "admin" && (
+              <button
+                onClick={() => navigate("/admin")}
+                className="flex items-center gap-2 bg-neutral-800 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-black transition-colors cursor-pointer"
+              >
+                <Icon name="ShieldCheck" size={15} />
+                Модерация
+              </button>
+            )}
             <button
               onClick={() => navigate("/editor")}
               className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-neutral-800 transition-colors cursor-pointer"
@@ -128,8 +137,8 @@ export default function Profile() {
                 <div key={a.id} className="bg-white rounded-xl border border-neutral-200 p-5 flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${a.status === "published" ? "bg-green-100 text-green-700" : "bg-neutral-100 text-neutral-600"}`}>
-                        {a.status === "published" ? "Опубликовано" : "Черновик"}
+                      <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${a.status === "published" ? "bg-green-100 text-green-700" : a.status === "pending" ? "bg-amber-100 text-amber-700" : "bg-neutral-100 text-neutral-600"}`}>
+                        {a.status === "published" ? "Опубликовано" : a.status === "pending" ? "На модерации" : "Черновик"}
                       </span>
                       <span className="text-xs text-neutral-400">{a.category}</span>
                     </div>

@@ -49,7 +49,7 @@ export default function Editor() {
     setBlocks(newBlocks);
   };
 
-  const save = async (status: "draft" | "published") => {
+  const save = async (status: "draft" | "pending") => {
     if (!title.trim() || !accessToken) return;
     setSaving(true);
     const res = await fetch(`${API_URL}?action=publish`, {
@@ -61,7 +61,7 @@ export default function Editor() {
     setSaving(false);
     if (data.slug) {
       setSaved(true);
-      setTimeout(() => navigate(status === "published" ? `/article/${data.slug}` : "/profile"), 1000);
+      setTimeout(() => navigate("/profile"), 1000);
     }
   };
 
@@ -89,10 +89,10 @@ export default function Editor() {
               className="px-4 py-2 rounded-full text-sm border border-neutral-300 hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-40">
               Сохранить черновик
             </button>
-            <button onClick={() => save("published")} disabled={saving || !title.trim()}
+            <button onClick={() => save("pending")} disabled={saving || !title.trim()}
               className="px-4 py-2 rounded-full text-sm bg-black text-white hover:bg-neutral-800 transition-colors cursor-pointer disabled:opacity-40 flex items-center gap-2">
               {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : null}
-              {saved ? "✓ Сохранено!" : "Опубликовать"}
+              {saved ? "✓ Отправлено!" : "Отправить на публикацию"}
             </button>
           </div>
         </div>

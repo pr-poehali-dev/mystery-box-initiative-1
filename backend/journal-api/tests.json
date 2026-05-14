@@ -7,6 +7,23 @@
       "expectedStatus": 200,
       "expectedBody": {"articles": []},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Pending articles without auth returns 401",
+      "method": "GET",
+      "path": "/?action=pending-articles",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "unauthorized"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Approve without auth returns 401",
+      "method": "POST",
+      "path": "/?action=approve",
+      "body": {"id": 999},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "unauthorized"},
+      "bodyMatcher": "partial"
     }
   ]
 }

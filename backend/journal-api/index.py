@@ -143,6 +143,8 @@ def handler(event: dict, context) -> dict:
         content = body.get("content", [])
         status = body.get("status", "draft")
         read_time = max(1, len(json.dumps(content)) // 1000)
+        if status not in ("draft", "pending", "published"):
+            status = "draft"
         published_at = datetime.now() if status == "published" else None
 
         conn = get_db()
@@ -206,5 +208,89 @@ def handler(event: dict, context) -> dict:
         cols = ["id","slug","title","category","status","read_time","created_at","published_at"]
         conn.close()
         return json_response({"articles": [dict(zip(cols, r)) for r in rows]})
+
+    # GET /pending-articles — список статей на модерацию (только admin)
+    if action == "pending-articles" and method == "GET":
+        user = get_user_from_token(event)
+        if not user:
+            return error("unauthorized", 401)
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT role FROM users WHERE id = %s", (user["sub"],))
+        row = cur.fetchone()
+        if not row or row[0] != "admin":
+            conn.close()
+            return error("forbidden", 403)
+        cur.execute("""
+            SELECT a.id, a.slug, a.title, a.lead, a.category, a.image_url,
+                   a.read_time, a.created_at, u.name as author_name, u.avatar_url as author_avatar
+            FROM articles_db a
+            JOIN users u ON a.author_id = u.id
+            WHERE a.status = 'pending'
+            ORDER BY a.created_at ASC
+        """)
+        rows = cur.fetchall()
+        cols = ["id","slug","title","lead","category","image_url","read_time","created_at","author_name","author_avatar"]
+        conn.close()
+        return json_response({"articles": [dict(zip(cols, r)) for r in rows]})
+
+    # POST /approve — одобрить статью (только admin)
+    if action == "approve" and method == "POST":
+        user = get_user_from_token(event)
+        if not user:
+            return error("unauthorized", 401)
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT role FROM users WHERE id = %s", (user["sub"],))
+        row = cur.fetchone()
+        if not row or row[0] != "admin":
+            conn.close()
+            return error("forbidden", 403)
+        article_id = body.get("id")
+        if not article_id:
+            conn.close()
+            return error("id required")
+        cur.execute("""
+            UPDATE articles_db
+            SET status = 'published', published_at = NOW(), updated_at = NOW()
+            WHERE id = %s AND status = 'pending'
+            RETURNING id, slug
+        """, (article_id,))
+        row = cur.fetchone()
+        conn.commit()
+        conn.close()
+        if not row:
+            return error("article not found or already processed", 404)
+        return json_response({"ok": True, "slug": row[1]})
+
+    # POST /reject — отклонить статью (только admin)
+    if action == "reject" and method == "POST":
+        user = get_user_from_token(event)
+        if not user:
+            return error("unauthorized", 401)
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT role FROM users WHERE id = %s", (user["sub"],))
+        row = cur.fetchone()
+        if not row or row[0] != "admin":
+            conn.close()
+            return error("forbidden", 403)
+        article_id = body.get("id")
+        reason = body.get("reason", "")
+        if not article_id:
+            conn.close()
+            return error("id required")
+        cur.execute("""
+            UPDATE articles_db
+            SET status = 'draft', updated_at = NOW()
+            WHERE id = %s AND status = 'pending'
+            RETURNING id
+        """, (article_id,))
+        row = cur.fetchone()
+        conn.commit()
+        conn.close()
+        if not row:
+            return error("article not found or already processed", 404)
+        return json_response({"ok": True})
 
     return error("unknown action", 404)
