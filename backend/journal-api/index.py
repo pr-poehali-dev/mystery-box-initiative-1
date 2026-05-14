@@ -216,7 +216,7 @@ def handler(event: dict, context) -> dict:
             return error("unauthorized", 401)
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT role FROM users WHERE id = %s", (user["sub"],))
+        cur.execute("SELECT role FROM users WHERE id = %s", (int(user["sub"]),))
         row = cur.fetchone()
         if not row or row[0] != "admin":
             conn.close()
@@ -241,7 +241,7 @@ def handler(event: dict, context) -> dict:
             return error("unauthorized", 401)
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT role FROM users WHERE id = %s", (user["sub"],))
+        cur.execute("SELECT role FROM users WHERE id = %s", (int(user["sub"]),))
         row = cur.fetchone()
         if not row or row[0] != "admin":
             conn.close()
@@ -253,14 +253,14 @@ def handler(event: dict, context) -> dict:
         cur.execute("""
             UPDATE articles_db
             SET status = 'published', published_at = NOW(), updated_at = NOW()
-            WHERE id = %s AND status = 'pending'
+            WHERE id = %s
             RETURNING id, slug
-        """, (article_id,))
+        """, (int(article_id),))
         row = cur.fetchone()
         conn.commit()
         conn.close()
         if not row:
-            return error("article not found or already processed", 404)
+            return error("article not found", 404)
         return json_response({"ok": True, "slug": row[1]})
 
     # POST /reject — отклонить статью (только admin)
@@ -270,7 +270,7 @@ def handler(event: dict, context) -> dict:
             return error("unauthorized", 401)
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT role FROM users WHERE id = %s", (user["sub"],))
+        cur.execute("SELECT role FROM users WHERE id = %s", (int(user["sub"]),))
         row = cur.fetchone()
         if not row or row[0] != "admin":
             conn.close()
@@ -283,9 +283,9 @@ def handler(event: dict, context) -> dict:
         cur.execute("""
             UPDATE articles_db
             SET status = 'draft', updated_at = NOW()
-            WHERE id = %s AND status = 'pending'
+            WHERE id = %s
             RETURNING id
-        """, (article_id,))
+        """, (int(article_id),))
         row = cur.fetchone()
         conn.commit()
         conn.close()
