@@ -1,0 +1,30 @@
+{
+  "tests": [
+    {
+      "name": "Send feedback message",
+      "method": "POST",
+      "path": "/?action=send",
+      "body": {"type": "question", "name": "Тест", "email": "test@test.com", "subject": "Тестовый вопрос", "message": "Это тестовое сообщение для проверки"},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Send feedback - empty message",
+      "method": "POST",
+      "path": "/?action=send",
+      "body": {"type": "question", "message": ""},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "Сообщение не может быть пустым"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "List feedback - unauthorized",
+      "method": "GET",
+      "path": "/?action=list",
+      "expectedStatus": 403,
+      "expectedBody": {"error": "Нет доступа"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

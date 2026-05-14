@@ -10,6 +10,8 @@ import YandexCallback from "./pages/YandexCallback";
 import Profile from "./pages/Profile";
 import Editor from "./pages/Editor";
 import Admin from "./pages/Admin";
+import Feedback from "./pages/Feedback";
+import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +31,8 @@ const App = () => (
             <Route path="/editor" element={<Editor />} />
             <Route path="/editor/:id" element={<Editor />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/feedback" element={<Feedback />} />
+            <Route path="/support" element={<Support />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

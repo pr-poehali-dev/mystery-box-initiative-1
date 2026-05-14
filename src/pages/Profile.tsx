@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_URL } from "@/lib/auth";
 import JournalHeader from "@/components/JournalHeader";
@@ -12,6 +12,8 @@ type Notification = { id: number; type: string; message: string; article_id: num
 export default function Profile() {
   const { user, isAuthenticated, isLoading, logout, accessToken } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const highlightWrite = searchParams.get("highlight") === "write";
   const [tab, setTab] = useState<Tab>("my-articles");
   const [myArticles, setMyArticles] = useState<MyArticle[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -87,7 +89,11 @@ export default function Profile() {
             )}
             <button
               onClick={() => navigate("/editor")}
-              className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-neutral-800 transition-colors cursor-pointer"
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
+                highlightWrite
+                  ? "bg-amber-400 text-black ring-2 ring-amber-400 ring-offset-2 animate-pulse hover:bg-amber-300"
+                  : "bg-black text-white hover:bg-neutral-800"
+              }`}
             >
               <Icon name="PenLine" size={15} />
               Написать статью

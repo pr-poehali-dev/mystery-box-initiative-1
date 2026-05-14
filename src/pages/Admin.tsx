@@ -5,6 +5,8 @@ import { API_URL } from "@/lib/auth";
 import JournalHeader from "@/components/JournalHeader";
 import Icon from "@/components/ui/icon";
 
+const FEEDBACK_API = "https://functions.poehali.dev/8ec90b3f-69bf-49c4-86dc-47fa2f182464";
+
 interface PendingArticle {
   id: number;
   slug: string;
@@ -29,7 +31,32 @@ interface PublishedArticle {
   author_name: string;
 }
 
-type AdminTab = "pending" | "published";
+interface FeedbackItem {
+  id: number;
+  type: string;
+  name: string | null;
+  email: string | null;
+  subject: string | null;
+  message: string;
+  status: string;
+  admin_notes: string | null;
+  created_at: string;
+}
+
+type AdminTab = "pending" | "published" | "feedback";
+
+const TYPE_LABELS: Record<string, string> = {
+  topic: "Тема",
+  question: "Вопрос",
+  story: "История",
+};
+
+const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  new: { label: "Новое", color: "bg-blue-100 text-blue-700" },
+  in_progress: { label: "В работе", color: "bg-amber-100 text-amber-700" },
+  done: { label: "Готово", color: "bg-green-100 text-green-700" },
+  spam: { label: "Спам", color: "bg-neutral-100 text-neutral-500" },
+};
 
 export default function Admin() {
   const { isAuthenticated, isLoading, accessToken } = useAuth();
@@ -38,20 +65,24 @@ export default function Admin() {
   const [tab, setTab] = useState<AdminTab>("pending");
   const [pending, setPending] = useState<PendingArticle[]>([]);
   const [published, setPublished] = useState<PublishedArticle[]>([]);
+  const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
   const [processing, setProcessing] = useState<number | null>(null);
   const [rejectId, setRejectId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [selectedFeedback, setSelectedFeedback] = useState<FeedbackItem | null>(null);
+  const [adminNotes, setAdminNotes] = useState("");
 
   const load = async () => {
     if (!accessToken) return;
     setFetching(true);
     const headers = { Authorization: `Bearer ${accessToken}` };
-    const [pendingRes, listRes] = await Promise.all([
+    const [pendingRes, listRes, feedbackRes] = await Promise.all([
       fetch(`${API_URL}?action=pending-articles`, { headers }),
       fetch(`${API_URL}?action=list`),
+      fetch(`${FEEDBACK_API}?action=list`, { headers }),
     ]);
     if (pendingRes.status === 403) {
       setError("Нет доступа. Эта страница только для администратора.");
@@ -60,8 +91,10 @@ export default function Admin() {
     }
     const pendingData = await pendingRes.json();
     const listData = await listRes.json();
+    const feedbackData = await feedbackRes.json();
     setPending(pendingData.articles || []);
     setPublished(listData.articles || []);
+    setFeedback(feedbackData.items || []);
     setFetching(false);
   };
 
@@ -113,6 +146,42 @@ export default function Admin() {
     setDeleteId(null);
   };
 
+  const updateFeedbackStatus = async (id: number, status: string, notes: string) => {
+    if (!accessToken) return;
+    await fetch(`${FEEDBACK_API}?action=update-status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ id, status, admin_notes: notes }),
+    });
+    setFeedback(prev => prev.map(f => f.id === id ? { ...f, status, admin_notes: notes } : f));
+    setSelectedFeedback(null);
+  };
+
+  const printFeedback = (item: FeedbackItem) => {
+    const win = window.open("", "_blank");
+    if (!win) return;
+    const typeLabel = TYPE_LABELS[item.type] || item.type;
+    const dateStr = new Date(item.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    win.document.write(`
+      <html><head><title>Обращение #${item.id}</title>
+      <style>body{font-family:sans-serif;max-width:700px;margin:40px auto;color:#111;line-height:1.6}h1{font-size:22px;margin-bottom:4px}p{margin:4px 0}.label{color:#666;font-size:13px}.value{font-size:15px;margin-bottom:12px}.message{background:#f5f5f5;padding:16px;border-radius:8px;font-size:15px;white-space:pre-wrap}.footer{margin-top:30px;font-size:12px;color:#999}@media print{body{margin:20px}}</style>
+      </head><body>
+      <h1>Обращение #${item.id} — ${typeLabel}</h1>
+      <p class="label">Дата</p><p class="value">${dateStr}</p>
+      ${item.name ? `<p class="label">Имя</p><p class="value">${item.name}</p>` : ""}
+      ${item.email ? `<p class="label">Email</p><p class="value">${item.email}</p>` : ""}
+      ${item.subject ? `<p class="label">Тема</p><p class="value">${item.subject}</p>` : ""}
+      <p class="label">Сообщение</p><div class="message">${item.message}</div>
+      ${item.admin_notes ? `<p class="label" style="margin-top:16px">Заметки редакции</p><p class="value">${item.admin_notes}</p>` : ""}
+      <div class="footer">Журнал «Своё» — внутренний документ</div>
+      </body></html>
+    `);
+    win.document.close();
+    win.print();
+  };
+
+  const newFeedbackCount = feedback.filter(f => f.status === "new").length;
+
   if (isLoading || fetching) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -132,7 +201,7 @@ export default function Admin() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-black">Панель модерации</h1>
-            <p className="text-sm text-neutral-500">Управление публикациями</p>
+            <p className="text-sm text-neutral-500">Управление публикациями и обращениями</p>
           </div>
         </div>
 
@@ -157,6 +226,17 @@ export default function Admin() {
                 className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${tab === "published" ? "bg-black text-white" : "text-neutral-600 hover:text-black"}`}
               >
                 Опубликованные
+              </button>
+              <button
+                onClick={() => setTab("feedback")}
+                className={`relative px-5 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${tab === "feedback" ? "bg-black text-white" : "text-neutral-600 hover:text-black"}`}
+              >
+                Обращения
+                {newFeedbackCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                    {newFeedbackCount}
+                  </span>
+                )}
               </button>
             </div>
 
@@ -204,6 +284,59 @@ export default function Admin() {
                 </div>
               )
             )}
+
+            {tab === "feedback" && (
+              feedback.length === 0 ? (
+                <div className="bg-white border border-neutral-200 rounded-2xl p-12 text-center">
+                  <div className="text-4xl mb-3">📭</div>
+                  <p className="text-neutral-600 font-medium">Нет обращений</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-neutral-500">{feedback.length} обращений, из них {newFeedbackCount} новых</p>
+                  {feedback.map(item => {
+                    const st = STATUS_LABELS[item.status] || { label: item.status, color: "bg-neutral-100 text-neutral-600" };
+                    const typeLabel = TYPE_LABELS[item.type] || item.type;
+                    const dateStr = new Date(item.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+                    return (
+                      <div key={item.id} className="bg-white border border-neutral-200 rounded-2xl p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${st.color}`}>{st.label}</span>
+                              <span className="text-xs bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-full">{typeLabel}</span>
+                              {item.name && <span className="text-xs text-neutral-500">{item.name}</span>}
+                              {item.email && <span className="text-xs text-neutral-400">{item.email}</span>}
+                              <span className="text-xs text-neutral-400">{dateStr}</span>
+                            </div>
+                            {item.subject && <p className="font-semibold text-sm mb-1">{item.subject}</p>}
+                            <p className="text-sm text-neutral-700 line-clamp-2">{item.message}</p>
+                            {item.admin_notes && (
+                              <p className="text-xs text-neutral-400 mt-1.5 italic">Заметка: {item.admin_notes}</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => printFeedback(item)}
+                              className="p-2 text-neutral-500 hover:text-black border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors cursor-pointer"
+                              title="Печать"
+                            >
+                              <Icon name="Printer" size={15} />
+                            </button>
+                            <button
+                              onClick={() => { setSelectedFeedback(item); setAdminNotes(item.admin_notes || ""); }}
+                              className="px-3 py-2 text-xs border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors cursor-pointer font-medium"
+                            >
+                              Открыть
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            )}
           </>
         )}
       </div>
@@ -242,6 +375,86 @@ export default function Admin() {
                 {processing !== null && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                 Удалить
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedFeedback && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold">Обращение #{selectedFeedback.id}</h3>
+              <button onClick={() => setSelectedFeedback(null)} className="text-neutral-400 hover:text-black cursor-pointer">
+                <Icon name="X" size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-3 mb-5">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><span className="text-neutral-400">Тип:</span> <span className="font-medium">{TYPE_LABELS[selectedFeedback.type] || selectedFeedback.type}</span></div>
+                <div><span className="text-neutral-400">Дата:</span> <span>{new Date(selectedFeedback.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</span></div>
+                {selectedFeedback.name && <div><span className="text-neutral-400">Имя:</span> <span>{selectedFeedback.name}</span></div>}
+                {selectedFeedback.email && <div><span className="text-neutral-400">Email:</span> <a href={`mailto:${selectedFeedback.email}`} className="text-black underline">{selectedFeedback.email}</a></div>}
+              </div>
+              {selectedFeedback.subject && (
+                <div><p className="text-xs text-neutral-400 mb-1">Тема</p><p className="font-semibold">{selectedFeedback.subject}</p></div>
+              )}
+              <div>
+                <p className="text-xs text-neutral-400 mb-1">Сообщение</p>
+                <div className="bg-neutral-50 rounded-xl p-4 text-sm whitespace-pre-wrap">{selectedFeedback.message}</div>
+              </div>
+            </div>
+
+            <div className="border-t border-neutral-100 pt-4 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Заметки редакции</label>
+                <textarea
+                  value={adminNotes}
+                  onChange={e => setAdminNotes(e.target.value)}
+                  placeholder="Внутренние заметки..."
+                  rows={2}
+                  className="w-full border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-black resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Статус</label>
+                <div className="flex gap-2 flex-wrap">
+                  {Object.entries(STATUS_LABELS).map(([key, { label, color }]) => (
+                    <button
+                      key={key}
+                      onClick={() => updateFeedbackStatus(selectedFeedback.id, key, adminNotes)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-opacity hover:opacity-80 ${color} ${selectedFeedback.status === key ? "ring-2 ring-offset-1 ring-black" : ""}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => printFeedback(selectedFeedback)}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
+                >
+                  <Icon name="Printer" size={14} />
+                  Печать
+                </button>
+                {selectedFeedback.email && (
+                  <a
+                    href={`mailto:${selectedFeedback.email}?subject=Re: ${selectedFeedback.subject || "Ваше обращение"}`}
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
+                  >
+                    <Icon name="Mail" size={14} />
+                    Ответить
+                  </a>
+                )}
+                <button
+                  onClick={() => updateFeedbackStatus(selectedFeedback.id, selectedFeedback.status, adminNotes)}
+                  className="ml-auto px-4 py-2 text-sm bg-black text-white rounded-full hover:bg-neutral-800 transition-colors cursor-pointer"
+                >
+                  Сохранить заметку
+                </button>
+              </div>
             </div>
           </div>
         </div>
