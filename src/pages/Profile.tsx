@@ -64,24 +64,31 @@ export default function Profile() {
     <div className="min-h-screen bg-neutral-50">
       <JournalHeader />
 
-      <div className="max-w-4xl mx-auto px-4 py-10">
-        <div className="flex items-center gap-4 mb-8 bg-white rounded-2xl p-6 border border-neutral-200">
-          {user?.avatar_url ? (
-            <img src={user.avatar_url} alt={user.name || ""} className="w-16 h-16 rounded-full object-cover" />
-          ) : (
-            <div className="w-16 h-16 rounded-full bg-neutral-200 flex items-center justify-center text-2xl font-bold text-neutral-600">
-              {user?.name?.[0] || "?"}
+      <div className="max-w-4xl mx-auto px-4 py-6 sm:py-10">
+
+        {/* Профиль-карточка */}
+        <div className="bg-white rounded-2xl border border-neutral-200 p-5 sm:p-6 mb-6">
+          {/* Аватар + имя */}
+          <div className="flex items-center gap-4 mb-5">
+            {user?.avatar_url ? (
+              <img src={user.avatar_url} alt={user.name || ""} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover shrink-0" />
+            ) : (
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-neutral-200 flex items-center justify-center text-2xl font-bold text-neutral-600 shrink-0">
+                {user?.name?.[0] || "?"}
+              </div>
+            )}
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold leading-tight truncate">{user?.name || "Пользователь"}</h1>
+              <p className="text-neutral-500 text-xs sm:text-sm truncate">{user?.email}</p>
             </div>
-          )}
-          <div className="flex-1">
-            <h1 className="text-xl font-bold">{user?.name || "Пользователь"}</h1>
-            <p className="text-neutral-500 text-sm">{user?.email}</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+
+          {/* Кнопки */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             {(user as { role?: string })?.role === "admin" && (
               <button
                 onClick={() => navigate("/admin")}
-                className="flex items-center gap-2 bg-neutral-800 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-black transition-colors cursor-pointer"
+                className="flex items-center justify-center gap-2 bg-neutral-800 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-black transition-colors cursor-pointer w-full sm:w-auto"
               >
                 <Icon name="ShieldCheck" size={15} />
                 Модерация
@@ -89,7 +96,7 @@ export default function Profile() {
             )}
             <button
               onClick={() => navigate("/editor")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer w-full sm:w-auto ${
                 highlightWrite
                   ? "bg-amber-400 text-black ring-2 ring-amber-400 ring-offset-2 animate-pulse hover:bg-amber-300"
                   : "bg-black text-white hover:bg-neutral-800"
@@ -100,23 +107,25 @@ export default function Profile() {
             </button>
             <button
               onClick={() => logout().then(() => navigate("/"))}
-              className="px-4 py-2 rounded-full text-sm border border-neutral-300 text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm border border-neutral-300 text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer w-full sm:w-auto"
             >
+              <Icon name="LogOut" size={14} />
               Выйти
             </button>
           </div>
         </div>
 
-        <div className="flex gap-1 mb-6 bg-white border border-neutral-200 rounded-xl p-1 w-fit">
+        {/* Табы */}
+        <div className="flex gap-1 mb-5 bg-white border border-neutral-200 rounded-xl p-1">
           <button
             onClick={() => setTab("my-articles")}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${tab === "my-articles" ? "bg-black text-white" : "text-neutral-600 hover:text-black"}`}
+            className={`flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${tab === "my-articles" ? "bg-black text-white" : "text-neutral-600 hover:text-black"}`}
           >
             Мои статьи
           </button>
           <button
             onClick={() => { setTab("notifications"); markAllRead(); }}
-            className={`relative px-5 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${tab === "notifications" ? "bg-black text-white" : "text-neutral-600 hover:text-black"}`}
+            className={`relative flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${tab === "notifications" ? "bg-black text-white" : "text-neutral-600 hover:text-black"}`}
           >
             Уведомления
             {unreadCount > 0 && (
@@ -127,6 +136,7 @@ export default function Profile() {
           </button>
         </div>
 
+        {/* Контент */}
         {dataLoading ? (
           <div className="flex justify-center py-16">
             <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin" />
@@ -141,22 +151,24 @@ export default function Profile() {
           ) : (
             <div className="space-y-3">
               {myArticles.map(a => (
-                <div key={a.id} className="bg-white rounded-xl border border-neutral-200 p-5 flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${a.status === "published" ? "bg-green-100 text-green-700" : a.status === "pending" ? "bg-amber-100 text-amber-700" : "bg-neutral-100 text-neutral-600"}`}>
-                        {a.status === "published" ? "Опубликовано" : a.status === "pending" ? "На модерации" : "Черновик"}
-                      </span>
-                      <span className="text-xs text-neutral-400">{a.category}</span>
+                <div key={a.id} className="bg-white rounded-xl border border-neutral-200 p-4 sm:p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${a.status === "published" ? "bg-green-100 text-green-700" : a.status === "pending" ? "bg-amber-100 text-amber-700" : "bg-neutral-100 text-neutral-600"}`}>
+                          {a.status === "published" ? "Опубликовано" : a.status === "pending" ? "На модерации" : "Черновик"}
+                        </span>
+                        <span className="text-xs text-neutral-400">{a.category}</span>
+                      </div>
+                      <h3 className="font-semibold text-sm leading-snug line-clamp-2">{a.title}</h3>
                     </div>
-                    <h3 className="font-semibold text-sm leading-snug truncate">{a.title}</h3>
+                    <button
+                      onClick={() => navigate(`/editor/${a.id}`)}
+                      className="text-xs border border-neutral-300 px-3 py-1.5 rounded-full hover:bg-neutral-100 transition-colors cursor-pointer shrink-0"
+                    >
+                      Изменить
+                    </button>
                   </div>
-                  <button
-                    onClick={() => navigate(`/editor/${a.id}`)}
-                    className="text-xs border border-neutral-300 px-3 py-1.5 rounded-full hover:bg-neutral-100 transition-colors cursor-pointer shrink-0"
-                  >
-                    Редактировать
-                  </button>
                 </div>
               ))}
             </div>
@@ -172,15 +184,13 @@ export default function Profile() {
               {notifications.map(n => {
                 const { icon, color } = notifIcon(n.type);
                 return (
-                  <div key={n.id} className={`bg-white rounded-xl border p-4 flex items-start gap-3 transition-colors ${n.is_read ? "border-neutral-200" : "border-neutral-300 bg-neutral-50"}`}>
+                  <div key={n.id} className={`bg-white rounded-xl border p-4 flex items-start gap-3 transition-colors ${n.is_read ? "border-neutral-200" : "border-neutral-300"}`}>
                     <Icon name={icon} size={20} className={`${color} shrink-0 mt-0.5`} />
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm ${n.is_read ? "text-neutral-600" : "text-neutral-900 font-medium"}`}>{n.message}</p>
-                      <p className="text-xs text-neutral-400 mt-1">
-                        {new Date(n.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
-                      </p>
+                      <p className="text-sm leading-snug">{n.message}</p>
+                      <p className="text-xs text-neutral-400 mt-1">{new Date(n.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</p>
                     </div>
-                    {!n.is_read && <div className="w-2 h-2 rounded-full bg-red-500 shrink-0 mt-1.5" />}
+                    {!n.is_read && <div className="w-2 h-2 rounded-full bg-black shrink-0 mt-1.5" />}
                   </div>
                 );
               })}
