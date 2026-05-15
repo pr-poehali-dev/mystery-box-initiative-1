@@ -13,12 +13,13 @@ export default function JournalHeader() {
       <div className="flex items-center justify-between px-4 h-14 gap-4">
         <button
           onClick={() => navigate("/")}
-          className="flex items-center gap-1 shrink-0 cursor-pointer"
+          className="flex items-center shrink-0 cursor-pointer"
         >
-          <span className="text-2xl font-black tracking-tighter leading-none text-black">О·Р</span>
-          <span className="text-[10px] bg-black text-white px-1.5 py-0.5 font-bold uppercase tracking-wide ml-1">
-            журнал
-          </span>
+          <img
+            src="https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/bucket/a837aae1-da54-4a9f-8fb7-7dd56ee0fdbd.png"
+            alt="Журнал"
+            className="h-7 w-auto object-contain invert"
+          />
         </button>
 
         <div className="flex-1" />
