@@ -41,7 +41,7 @@ export default function Footer() {
               </div>
               <div className="flex flex-col items-end gap-3">
                 <img
-                  src="https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/bucket/c182c831-b4fc-4d27-ade2-a6ef92d397c5.png"
+                  src="https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/bucket/a837aae1-da54-4a9f-8fb7-7dd56ee0fdbd.png"
                   alt="Организатор"
                   className="h-8 sm:h-10 w-auto object-contain opacity-70"
                 />
