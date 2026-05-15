@@ -28,6 +28,7 @@ export default function Footer() {
                 <h3 className="mb-2 sm:mb-3 uppercase text-neutral-500 text-xs tracking-widest">Документы</h3>
                 <Link to="/privacy" className="text-neutral-400 hover:text-white transition-colors duration-300 text-xs sm:text-sm">Политика конфиденциальности</Link>
                 <Link to="/terms" className="text-neutral-400 hover:text-white transition-colors duration-300 text-xs sm:text-sm">Пользовательское соглашение</Link>
+                <Link to="/offer" className="text-neutral-400 hover:text-white transition-colors duration-300 text-xs sm:text-sm">Публичная оферта</Link>
                 <Link to="/feedback" className="text-neutral-400 hover:text-white transition-colors duration-300 text-xs sm:text-sm">Обратная связь</Link>
               </div>
             </div>
