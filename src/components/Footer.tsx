@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function Footer() {
   return (
     <div
@@ -22,6 +24,12 @@ export default function Footer() {
                 <a href="#" className="text-white hover:text-neutral-400 transition-colors duration-300 text-sm sm:text-base">Навруз</a>
                 <a href="#" className="text-white hover:text-neutral-400 transition-colors duration-300 text-sm sm:text-base">Сабантуй</a>
               </div>
+              <div className="flex flex-col gap-1 sm:gap-2">
+                <h3 className="mb-2 sm:mb-3 uppercase text-neutral-500 text-xs tracking-widest">Документы</h3>
+                <Link to="/privacy" className="text-neutral-400 hover:text-white transition-colors duration-300 text-xs sm:text-sm">Политика конфиденциальности</Link>
+                <Link to="/terms" className="text-neutral-400 hover:text-white transition-colors duration-300 text-xs sm:text-sm">Пользовательское соглашение</Link>
+                <Link to="/feedback" className="text-neutral-400 hover:text-white transition-colors duration-300 text-xs sm:text-sm">Обратная связь</Link>
+              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0">
@@ -31,7 +39,10 @@ export default function Footer() {
                 </h1>
                 <p className="text-neutral-600 text-xs uppercase tracking-widest mt-3">Журнал о традициях, людях и кухне</p>
               </div>
-              <p className="text-neutral-600 text-xs">{new Date().getFullYear()} · Открой свою Россию</p>
+              <div className="text-right">
+                <p className="text-neutral-600 text-xs">{new Date().getFullYear()} · ИП Серебренникова Г.С.</p>
+                <p className="text-neutral-700 text-xs mt-1">ИНН 890500558522 · ОГРНИП 325890000028798</p>
+              </div>
             </div>
           </div>
         </div>

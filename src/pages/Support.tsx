@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import JournalHeader from "@/components/JournalHeader";
 import Icon from "@/components/ui/icon";
 
@@ -44,6 +44,7 @@ export default function Support() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [consent, setConsent] = useState(false);
 
   const plan = PLANS.find(p => p.id === selectedPlan);
 
@@ -51,6 +52,10 @@ export default function Support() {
     e.preventDefault();
     if (!email.trim()) {
       setError("Укажите email для связи");
+      return;
+    }
+    if (!consent) {
+      setError("Необходимо согласие на обработку персональных данных");
       return;
     }
     setLoading(true);
@@ -190,16 +195,30 @@ export default function Support() {
                     />
                   </div>
 
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={consent}
+                      onChange={e => { setConsent(e.target.checked); setError(""); }}
+                      className="mt-0.5 shrink-0 w-4 h-4 cursor-pointer accent-black"
+                    />
+                    <span className="text-xs text-neutral-500 leading-relaxed">
+                      Я соглашаюсь на обработку персональных данных в соответствии с{" "}
+                      <Link to="/privacy" className="text-black underline hover:text-neutral-600" target="_blank">
+                        Политикой конфиденциальности
+                      </Link>
+                    </span>
+                  </label>
+
                   <div className="flex items-center gap-4 pt-1">
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={loading || !consent}
                       className="flex-1 bg-black text-white py-3 rounded-xl font-medium text-sm hover:bg-neutral-800 transition-colors disabled:opacity-50 cursor-pointer"
                     >
                       {loading ? "Отправляем..." : `Оформить — ${plan?.amount.toLocaleString("ru-RU")} ₽/мес`}
                     </button>
                   </div>
-                  <p className="text-xs text-neutral-400 text-center">Нажимая кнопку, вы соглашаетесь на обработку персональных данных</p>
                 </form>
               </div>
             )}
