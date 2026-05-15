@@ -49,10 +49,16 @@ export default function Support() {
   const plan = PLANS.find(p => p.id === selectedPlan);
 
   useEffect(() => {
-    const el = document.getElementById("robokassa-reader");
-    if (el && (window as Window & { Robokassa?: { CreatePaymentForm?: (id: string) => void } }).Robokassa?.CreatePaymentForm) {
-      (window as Window & { Robokassa?: { CreatePaymentForm?: (id: string) => void } }).Robokassa!.CreatePaymentForm!("robokassa-reader");
-    }
+    const existing = document.getElementById("robokassa-script");
+    if (existing) return;
+    const script = document.createElement("script");
+    script.id = "robokassa-script";
+    script.type = "text/javascript";
+    script.src = "https://auth.robokassa.ru/Merchant/PaymentForm/FormSS.js?EncodedInvoiceId=YOQirW945kOXeiXg4W8-Kg";
+    document.head.appendChild(script);
+    return () => {
+      document.getElementById("robokassa-script")?.remove();
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
