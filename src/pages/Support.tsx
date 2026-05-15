@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import JournalHeader from "@/components/JournalHeader";
 import Icon from "@/components/ui/icon";
@@ -47,6 +47,13 @@ export default function Support() {
   const [consent, setConsent] = useState(false);
 
   const plan = PLANS.find(p => p.id === selectedPlan);
+
+  useEffect(() => {
+    const el = document.getElementById("robokassa-reader");
+    if (el && (window as Window & { Robokassa?: { CreatePaymentForm?: (id: string) => void } }).Robokassa?.CreatePaymentForm) {
+      (window as Window & { Robokassa?: { CreatePaymentForm?: (id: string) => void } }).Robokassa!.CreatePaymentForm!("robokassa-reader");
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,6 +157,9 @@ export default function Support() {
                       </li>
                     ))}
                   </ul>
+                  {p.id === "reader" && (
+                    <div id="robokassa-reader" className="mt-4" onClick={e => e.stopPropagation()} />
+                  )}
                 </button>
               ))}
             </div>
