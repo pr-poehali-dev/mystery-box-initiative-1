@@ -4,59 +4,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { API_URL } from "@/lib/auth";
 import JournalHeader from "@/components/JournalHeader";
 import Icon from "@/components/ui/icon";
-
-const FEEDBACK_API = "https://functions.poehali.dev/8ec90b3f-69bf-49c4-86dc-47fa2f182464";
-
-interface PendingArticle {
-  id: number;
-  slug: string;
-  title: string;
-  lead: string;
-  category: string;
-  image_url: string;
-  read_time: number;
-  created_at: string;
-  author_name: string;
-  author_avatar: string;
-}
-
-interface PublishedArticle {
-  id: number;
-  slug: string;
-  title: string;
-  category: string;
-  image_url: string;
-  read_time: number;
-  published_at: string;
-  author_name: string;
-}
-
-interface FeedbackItem {
-  id: number;
-  type: string;
-  name: string | null;
-  email: string | null;
-  subject: string | null;
-  message: string;
-  status: string;
-  admin_notes: string | null;
-  created_at: string;
-}
-
-type AdminTab = "pending" | "published" | "feedback";
-
-const TYPE_LABELS: Record<string, string> = {
-  topic: "Тема",
-  question: "Вопрос",
-  story: "История",
-};
-
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  new: { label: "Новое", color: "bg-blue-100 text-blue-700" },
-  in_progress: { label: "В работе", color: "bg-amber-100 text-amber-700" },
-  done: { label: "Готово", color: "bg-green-100 text-green-700" },
-  spam: { label: "Спам", color: "bg-neutral-100 text-neutral-500" },
-};
+import ArticlesTab from "./admin/ArticlesTab";
+import FeedbackTab from "./admin/FeedbackTab";
+import { PendingArticle, PublishedArticle, FeedbackItem, AdminTab, TYPE_LABELS, FEEDBACK_API } from "./admin/types";
 
 export default function Admin() {
   const { isAuthenticated, isLoading, accessToken } = useAuth();
@@ -72,8 +22,6 @@ export default function Admin() {
   const [rejectId, setRejectId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [selectedFeedback, setSelectedFeedback] = useState<FeedbackItem | null>(null);
-  const [adminNotes, setAdminNotes] = useState("");
 
   const load = async () => {
     if (!accessToken) return;
@@ -154,7 +102,6 @@ export default function Admin() {
       body: JSON.stringify({ id, status, admin_notes: notes }),
     });
     setFeedback(prev => prev.map(f => f.id === id ? { ...f, status, admin_notes: notes } : f));
-    setSelectedFeedback(null);
   };
 
   const printFeedback = (item: FeedbackItem) => {
@@ -240,306 +187,35 @@ export default function Admin() {
               </button>
             </div>
 
-            {tab === "pending" && (
-              pending.length === 0 ? (
-                <div className="bg-white border border-neutral-200 rounded-2xl p-12 text-center">
-                  <div className="text-4xl mb-3">✓</div>
-                  <p className="text-neutral-600 font-medium">Нет статей на модерации</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <p className="text-sm text-neutral-500">{pending.length} {pending.length === 1 ? "статья" : pending.length < 5 ? "статьи" : "статей"} на рассмотрении</p>
-                  {pending.map(article => (
-                    <ArticleCard
-                      key={article.id}
-                      article={article}
-                      processing={processing}
-                      onApprove={() => approve(article.id)}
-                      onReject={() => setRejectId(article.id)}
-                      onDelete={() => setDeleteId(article.id)}
-                      showApprove
-                    />
-                  ))}
-                </div>
-              )
-            )}
-
-            {tab === "published" && (
-              published.length === 0 ? (
-                <div className="bg-white border border-neutral-200 rounded-2xl p-12 text-center">
-                  <p className="text-neutral-600">Нет опубликованных статей</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <p className="text-sm text-neutral-500">{published.length} опубликованных статей</p>
-                  {published.map(article => (
-                    <ArticleCard
-                      key={article.id}
-                      article={article as PendingArticle}
-                      processing={processing}
-                      onDelete={() => setDeleteId(article.id)}
-                      showApprove={false}
-                    />
-                  ))}
-                </div>
-              )
+            {(tab === "pending" || tab === "published") && (
+              <ArticlesTab
+                tab={tab}
+                pending={pending}
+                published={published}
+                processing={processing}
+                onApprove={approve}
+                onSetRejectId={setRejectId}
+                onSetDeleteId={setDeleteId}
+                rejectId={rejectId}
+                rejectReason={rejectReason}
+                onRejectReasonChange={setRejectReason}
+                onRejectConfirm={reject}
+                onRejectCancel={() => { setRejectId(null); setRejectReason(""); }}
+                deleteId={deleteId}
+                onDeleteConfirm={deleteArticle}
+                onDeleteCancel={() => setDeleteId(null)}
+              />
             )}
 
             {tab === "feedback" && (
-              feedback.length === 0 ? (
-                <div className="bg-white border border-neutral-200 rounded-2xl p-12 text-center">
-                  <div className="text-4xl mb-3">📭</div>
-                  <p className="text-neutral-600 font-medium">Нет обращений</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-sm text-neutral-500">{feedback.length} обращений, из них {newFeedbackCount} новых</p>
-                  {feedback.map(item => {
-                    const st = STATUS_LABELS[item.status] || { label: item.status, color: "bg-neutral-100 text-neutral-600" };
-                    const typeLabel = TYPE_LABELS[item.type] || item.type;
-                    const dateStr = new Date(item.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
-                    return (
-                      <div key={item.id} className="bg-white border border-neutral-200 rounded-2xl p-5">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${st.color}`}>{st.label}</span>
-                              <span className="text-xs bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-full">{typeLabel}</span>
-                              {item.name && <span className="text-xs text-neutral-500">{item.name}</span>}
-                              {item.email && <span className="text-xs text-neutral-400">{item.email}</span>}
-                              <span className="text-xs text-neutral-400">{dateStr}</span>
-                            </div>
-                            {item.subject && <p className="font-semibold text-sm mb-1">{item.subject}</p>}
-                            <p className="text-sm text-neutral-700 line-clamp-2">{item.message}</p>
-                            {item.admin_notes && (
-                              <p className="text-xs text-neutral-400 mt-1.5 italic">Заметка: {item.admin_notes}</p>
-                            )}
-                          </div>
-                          <div className="flex gap-2 shrink-0">
-                            <button
-                              onClick={() => printFeedback(item)}
-                              className="p-2 text-neutral-500 hover:text-black border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors cursor-pointer"
-                              title="Печать"
-                            >
-                              <Icon name="Printer" size={15} />
-                            </button>
-                            <button
-                              onClick={() => { setSelectedFeedback(item); setAdminNotes(item.admin_notes || ""); }}
-                              className="px-3 py-2 text-xs border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors cursor-pointer font-medium"
-                            >
-                              Открыть
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )
+              <FeedbackTab
+                feedback={feedback}
+                newFeedbackCount={newFeedbackCount}
+                onUpdateStatus={updateFeedbackStatus}
+                onPrint={printFeedback}
+              />
             )}
           </>
-        )}
-      </div>
-
-      {rejectId !== null && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-lg font-bold mb-3">Отклонить статью</h3>
-            <p className="text-sm text-neutral-600 mb-4">Статья вернётся автору как черновик. Автор получит уведомление.</p>
-            <textarea
-              value={rejectReason}
-              onChange={e => setRejectReason(e.target.value)}
-              placeholder="Причина отклонения (необязательно)..."
-              rows={3}
-              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-neutral-500 resize-none mb-4"
-            />
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => { setRejectId(null); setRejectReason(""); }} className="px-4 py-2 text-sm border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer">Отмена</button>
-              <button onClick={reject} disabled={processing !== null} className="px-4 py-2 text-sm bg-amber-500 text-white rounded-full hover:bg-amber-600 transition-colors cursor-pointer disabled:opacity-40 flex items-center gap-2">
-                {processing !== null && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                Отклонить
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {deleteId !== null && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-lg font-bold mb-3 text-red-600">Удалить статью</h3>
-            <p className="text-sm text-neutral-600 mb-6">Статья будет удалена. Автор получит уведомление. Это действие нельзя отменить.</p>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setDeleteId(null)} className="px-4 py-2 text-sm border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer">Отмена</button>
-              <button onClick={deleteArticle} disabled={processing !== null} className="px-4 py-2 text-sm bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-40 flex items-center gap-2">
-                {processing !== null && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                Удалить
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {selectedFeedback && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold">Обращение #{selectedFeedback.id}</h3>
-              <button onClick={() => setSelectedFeedback(null)} className="text-neutral-400 hover:text-black cursor-pointer">
-                <Icon name="X" size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-3 mb-5">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><span className="text-neutral-400">Тип:</span> <span className="font-medium">{TYPE_LABELS[selectedFeedback.type] || selectedFeedback.type}</span></div>
-                <div><span className="text-neutral-400">Дата:</span> <span>{new Date(selectedFeedback.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</span></div>
-                {selectedFeedback.name && <div><span className="text-neutral-400">Имя:</span> <span>{selectedFeedback.name}</span></div>}
-                {selectedFeedback.email && <div><span className="text-neutral-400">Email:</span> <a href={`mailto:${selectedFeedback.email}`} className="text-black underline">{selectedFeedback.email}</a></div>}
-              </div>
-              {selectedFeedback.subject && (
-                <div><p className="text-xs text-neutral-400 mb-1">Тема</p><p className="font-semibold">{selectedFeedback.subject}</p></div>
-              )}
-              <div>
-                <p className="text-xs text-neutral-400 mb-1">Сообщение</p>
-                <div className="bg-neutral-50 rounded-xl p-4 text-sm whitespace-pre-wrap">{selectedFeedback.message}</div>
-              </div>
-            </div>
-
-            <div className="border-t border-neutral-100 pt-4 space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Заметки редакции</label>
-                <textarea
-                  value={adminNotes}
-                  onChange={e => setAdminNotes(e.target.value)}
-                  placeholder="Внутренние заметки..."
-                  rows={2}
-                  className="w-full border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-black resize-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Статус</label>
-                <div className="flex gap-2 flex-wrap">
-                  {Object.entries(STATUS_LABELS).map(([key, { label, color }]) => (
-                    <button
-                      key={key}
-                      onClick={() => updateFeedbackStatus(selectedFeedback.id, key, adminNotes)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-opacity hover:opacity-80 ${color} ${selectedFeedback.status === key ? "ring-2 ring-offset-1 ring-black" : ""}`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-2 pt-1">
-                <button
-                  onClick={() => printFeedback(selectedFeedback)}
-                  className="flex items-center gap-1.5 px-4 py-2 text-sm border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
-                >
-                  <Icon name="Printer" size={14} />
-                  Печать
-                </button>
-                {selectedFeedback.email && (
-                  <a
-                    href={`mailto:${selectedFeedback.email}?subject=Re: ${selectedFeedback.subject || "Ваше обращение"}`}
-                    className="flex items-center gap-1.5 px-4 py-2 text-sm border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
-                  >
-                    <Icon name="Mail" size={14} />
-                    Ответить
-                  </a>
-                )}
-                <button
-                  onClick={() => updateFeedbackStatus(selectedFeedback.id, selectedFeedback.status, adminNotes)}
-                  className="ml-auto px-4 py-2 text-sm bg-black text-white rounded-full hover:bg-neutral-800 transition-colors cursor-pointer"
-                >
-                  Сохранить заметку
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ArticleCard({ article, processing, onApprove, onReject, onDelete, showApprove }: {
-  article: PendingArticle;
-  processing: number | null;
-  onApprove?: () => void;
-  onReject?: () => void;
-  onDelete: () => void;
-  showApprove: boolean;
-}) {
-  const dateStr = article.created_at
-    ? new Date(article.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })
-    : "";
-
-  return (
-    <div className="bg-white border border-neutral-200 rounded-2xl p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            {article.author_avatar ? (
-              <img src={article.author_avatar} alt={article.author_name} className="w-6 h-6 rounded-full object-cover" />
-            ) : (
-              <div className="w-6 h-6 rounded-full bg-neutral-200 flex items-center justify-center text-[10px] font-bold text-neutral-600">
-                {article.author_name?.[0] || "?"}
-              </div>
-            )}
-            <span className="text-sm text-neutral-500">{article.author_name}</span>
-            <span className="text-xs bg-neutral-100 text-neutral-500 px-2 py-0.5 rounded-full">{article.category}</span>
-            <span className="text-xs text-neutral-400">{article.read_time} мин</span>
-          </div>
-          <h2 className="text-lg font-bold text-black mb-1 line-clamp-2">{article.title}</h2>
-          {article.lead && <p className="text-sm text-neutral-600 line-clamp-2">{article.lead}</p>}
-          <p className="text-xs text-neutral-400 mt-2">{dateStr}</p>
-        </div>
-        {article.image_url && (
-          <img src={article.image_url} alt="" className="w-20 h-20 object-cover rounded-lg shrink-0" />
-        )}
-      </div>
-
-      <div className="flex items-center gap-2 mt-4 pt-4 border-t border-neutral-100">
-        <button
-          onClick={() => window.open(`/article/${article.slug}`, "_blank")}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-neutral-600 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
-        >
-          <Icon name="Eye" size={14} />
-          Просмотр
-        </button>
-        <div className="flex-1" />
-        <button
-          onClick={onDelete}
-          disabled={processing === article.id}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-full hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-40"
-        >
-          <Icon name="Trash2" size={14} />
-          Удалить
-        </button>
-        {showApprove && onReject && (
-          <button
-            onClick={onReject}
-            disabled={processing === article.id}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-sm text-amber-600 border border-amber-200 rounded-full hover:bg-amber-50 transition-colors cursor-pointer disabled:opacity-40"
-          >
-            <Icon name="X" size={14} />
-            Отклонить
-          </button>
-        )}
-        {showApprove && onApprove && (
-          <button
-            onClick={onApprove}
-            disabled={processing === article.id}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-black text-white rounded-full hover:bg-neutral-800 transition-colors cursor-pointer disabled:opacity-40"
-          >
-            {processing === article.id ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Icon name="Check" size={14} />
-            )}
-            Опубликовать
-          </button>
         )}
       </div>
     </div>
