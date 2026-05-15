@@ -34,15 +34,14 @@ export default function Footer() {
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0">
               <div>
-                <h1 className="text-[13vw] sm:text-[12vw] lg:text-[10vw] leading-[0.85] text-white font-bold tracking-tight">
-                  МОЯ РОССИЯ
-                </h1>
+                <img
+                  src="https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/bucket/c182c831-b4fc-4d27-ade2-a6ef92d397c5.png"
+                  alt="Своё"
+                  className="h-10 sm:h-14 lg:h-16 w-auto object-contain"
+                />
                 <p className="text-neutral-600 text-xs uppercase tracking-widest mt-3">Журнал о традициях, людях и кухне</p>
               </div>
-              <div className="text-right">
-                <p className="text-neutral-600 text-xs">{new Date().getFullYear()} · ИП Серебренникова Г.С.</p>
-                <p className="text-neutral-700 text-xs mt-1">ИНН 890500558522 · ОГРНИП 325890000028798</p>
-              </div>
+              <p className="text-neutral-600 text-xs">{new Date().getFullYear()} · Журнал «Своё»</p>
             </div>
           </div>
         </div>
