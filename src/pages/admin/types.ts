@@ -34,7 +34,7 @@ export interface FeedbackItem {
   created_at: string;
 }
 
-export type AdminTab = "pending" | "published" | "feedback";
+export type AdminTab = "pending" | "published" | "feedback" | "subscriptions";
 
 export const TYPE_LABELS: Record<string, string> = {
   topic: "Тема",

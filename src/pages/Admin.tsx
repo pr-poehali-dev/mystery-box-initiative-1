@@ -6,6 +6,7 @@ import JournalHeader from "@/components/JournalHeader";
 import Icon from "@/components/ui/icon";
 import ArticlesTab from "./admin/ArticlesTab";
 import FeedbackTab from "./admin/FeedbackTab";
+import SubscriptionsTab, { Subscription } from "./admin/SubscriptionsTab";
 import { PendingArticle, PublishedArticle, FeedbackItem, AdminTab, TYPE_LABELS, FEEDBACK_API } from "./admin/types";
 
 export default function Admin() {
@@ -16,6 +17,7 @@ export default function Admin() {
   const [pending, setPending] = useState<PendingArticle[]>([]);
   const [published, setPublished] = useState<PublishedArticle[]>([]);
   const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
   const [processing, setProcessing] = useState<number | null>(null);
@@ -27,10 +29,11 @@ export default function Admin() {
     if (!accessToken) return;
     setFetching(true);
     const headers = { Authorization: `Bearer ${accessToken}` };
-    const [pendingRes, listRes, feedbackRes] = await Promise.all([
+    const [pendingRes, listRes, feedbackRes, subsRes] = await Promise.all([
       fetch(`${API_URL}?action=pending-articles`, { headers }),
       fetch(`${API_URL}?action=list`),
       fetch(`${FEEDBACK_API}?action=list`, { headers }),
+      fetch(`${FEEDBACK_API}?action=subscriptions`, { headers }),
     ]);
     if (pendingRes.status === 403) {
       setError("Нет доступа. Эта страница только для администратора.");
@@ -40,9 +43,11 @@ export default function Admin() {
     const pendingData = await pendingRes.json();
     const listData = await listRes.json();
     const feedbackData = await feedbackRes.json();
+    const subsData = await subsRes.json();
     setPending(pendingData.articles || []);
     setPublished(listData.articles || []);
     setFeedback(feedbackData.items || []);
+    setSubscriptions(subsData.items || []);
     setFetching(false);
   };
 
@@ -94,6 +99,26 @@ export default function Admin() {
     setDeleteId(null);
   };
 
+  const confirmSubscription = async (id: number) => {
+    if (!accessToken) return;
+    await fetch(`${FEEDBACK_API}?action=confirm-subscription`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ id }),
+    });
+    setSubscriptions(prev => prev.map(s => s.id === id ? { ...s, status: "confirmed", confirmed_at: new Date().toISOString() } : s));
+  };
+
+  const rejectSubscription = async (id: number) => {
+    if (!accessToken) return;
+    await fetch(`${FEEDBACK_API}?action=reject-subscription`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ id }),
+    });
+    setSubscriptions(prev => prev.map(s => s.id === id ? { ...s, status: "rejected" } : s));
+  };
+
   const updateFeedbackStatus = async (id: number, status: string, notes: string) => {
     if (!accessToken) return;
     await fetch(`${FEEDBACK_API}?action=update-status`, {
@@ -128,6 +153,7 @@ export default function Admin() {
   };
 
   const newFeedbackCount = feedback.filter(f => f.status === "new").length;
+  const pendingSubsCount = subscriptions.filter(s => s.status === "pending").length;
 
   if (isLoading || fetching) {
     return (
@@ -185,6 +211,17 @@ export default function Admin() {
                   </span>
                 )}
               </button>
+              <button
+                onClick={() => setTab("subscriptions")}
+                className={`relative px-5 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${tab === "subscriptions" ? "bg-black text-white" : "text-neutral-600 hover:text-black"}`}
+              >
+                Подписки
+                {pendingSubsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                    {pendingSubsCount}
+                  </span>
+                )}
+              </button>
             </div>
 
             {(tab === "pending" || tab === "published") && (
@@ -213,6 +250,14 @@ export default function Admin() {
                 newFeedbackCount={newFeedbackCount}
                 onUpdateStatus={updateFeedbackStatus}
                 onPrint={printFeedback}
+              />
+            )}
+
+            {tab === "subscriptions" && (
+              <SubscriptionsTab
+                subscriptions={subscriptions}
+                onConfirm={confirmSubscription}
+                onReject={rejectSubscription}
               />
             )}
           </>

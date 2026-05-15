@@ -1,0 +1,3 @@
+ALTER TABLE subscriptions
+  ADD COLUMN IF NOT EXISTS user_id INTEGER,
+  ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMP;

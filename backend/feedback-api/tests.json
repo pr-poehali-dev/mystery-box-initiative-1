@@ -25,6 +25,23 @@
       "expectedStatus": 403,
       "expectedBody": {"error": "Нет доступа"},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Subscribe reader plan",
+      "method": "POST",
+      "path": "/?action=subscribe",
+      "body": {"name": "Тест Тестов", "email": "test@test.com", "plan": "reader", "amount": 300, "message": ""},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Subscriptions list - unauthorized",
+      "method": "GET",
+      "path": "/?action=subscriptions",
+      "expectedStatus": 403,
+      "expectedBody": {"error": "Нет доступа"},
+      "bodyMatcher": "partial"
     }
   ]
 }

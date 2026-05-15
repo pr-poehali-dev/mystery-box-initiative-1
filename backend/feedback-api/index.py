@@ -138,7 +138,7 @@ def handler(event: dict, context) -> dict:
         cols = ["id", "type", "name", "email", "subject", "message", "status", "admin_notes", "created_at"]
         return json_response({"item": dict(zip(cols, row))})
 
-    # --- Подписка (публичный) ---
+    # --- Подписка (публичный, опционально авторизованный) ---
     if action == "subscribe" and method == "POST":
         name = (body.get("name") or "").strip()[:255]
         email = (body.get("email") or "").strip()[:255]
@@ -149,11 +149,20 @@ def handler(event: dict, context) -> dict:
         if not email or not plan:
             return error("Email и план обязательны")
 
+        # Получаем user_id если пользователь авторизован
+        user_id = None
+        try:
+            user_data = get_user_from_token(event)
+            if user_data:
+                user_id = user_data.get("user_id")
+        except Exception:
+            pass
+
         db = get_db()
         cur = db.cursor()
         cur.execute(
-            "INSERT INTO subscriptions (name, email, plan, amount, message) VALUES (%s, %s, %s, %s, %s) RETURNING id",
-            (name or None, email, plan, int(amount), message or None)
+            "INSERT INTO subscriptions (name, email, plan, amount, message, user_id) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+            (name or None, email, plan, int(amount), message or None, user_id)
         )
         new_id = cur.fetchone()[0]
         db.commit()
@@ -169,12 +178,72 @@ def handler(event: dict, context) -> dict:
 
         db = get_db()
         cur = db.cursor()
-        cur.execute("SELECT id, name, email, plan, amount, status, message, created_at FROM subscriptions ORDER BY created_at DESC")
+        cur.execute(
+            "SELECT id, name, email, plan, amount, status, message, user_id, confirmed_at, created_at "
+            "FROM subscriptions ORDER BY created_at DESC"
+        )
         rows = cur.fetchall()
-        cols = ["id", "name", "email", "plan", "amount", "status", "message", "created_at"]
+        cols = ["id", "name", "email", "plan", "amount", "status", "message", "user_id", "confirmed_at", "created_at"]
         items = [dict(zip(cols, r)) for r in rows]
         cur.close()
         db.close()
         return json_response({"items": items})
+
+    # --- Подтвердить подписку и присвоить роль (только админ) ---
+    if action == "confirm-subscription" and method == "POST":
+        admin = get_user_from_token(event)
+        if not admin or admin.get("role") != "admin":
+            return error("Нет доступа", 403)
+
+        sub_id = body.get("id")
+        if not sub_id:
+            return error("Не указан id подписки")
+
+        db = get_db()
+        cur = db.cursor()
+
+        # Получаем подписку
+        cur.execute("SELECT id, user_id, plan, email FROM subscriptions WHERE id = %s", (int(sub_id),))
+        row = cur.fetchone()
+        if not row:
+            cur.close()
+            db.close()
+            return error("Подписка не найдена", 404)
+
+        _, user_id, plan, email = row
+
+        # Обновляем статус подписки
+        cur.execute(
+            "UPDATE subscriptions SET status = 'confirmed', confirmed_at = NOW() WHERE id = %s",
+            (int(sub_id),)
+        )
+
+        # Если есть user_id — присваиваем роль
+        if user_id:
+            role = plan if plan in ("reader", "friend", "expert") else "reader"
+            cur.execute("UPDATE users SET role = %s WHERE id = %s", (role, user_id))
+
+        db.commit()
+        cur.close()
+        db.close()
+        return json_response({"ok": True, "user_updated": bool(user_id)})
+
+    # --- Отклонить подписку (только админ) ---
+    if action == "reject-subscription" and method == "POST":
+        admin = get_user_from_token(event)
+        if not admin or admin.get("role") != "admin":
+            return error("Нет доступа", 403)
+
+        sub_id = body.get("id")
+        if not sub_id:
+            return error("Не указан id подписки")
+
+        db = get_db()
+        cur = db.cursor()
+        cur.execute("UPDATE subscriptions SET status = 'rejected' WHERE id = %s", (int(sub_id),))
+        db.commit()
+        cur.close()
+        db.close()
+        return json_response({"ok": True})
 
     return error("Неизвестное действие", 404)
