@@ -1,5 +1,6 @@
 import { useState } from "react";
 import JournalHeader from "@/components/JournalHeader";
+import Hero from "@/components/Hero";
 import Sidebar from "@/components/Sidebar";
 import Feed from "@/components/Feed";
 import RightPanel from "@/components/RightPanel";
@@ -11,6 +12,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-white">
       <JournalHeader />
+      <Hero />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex gap-8">
