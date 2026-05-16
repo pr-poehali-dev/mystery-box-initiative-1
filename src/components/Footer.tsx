@@ -42,11 +42,13 @@ export default function Footer() {
                 <p className="text-neutral-600 text-xs uppercase tracking-widest mt-3">Журнал о традициях, людях и кухне</p>
               </div>
               <div className="flex flex-col items-end gap-3">
-                <img
-                  src="https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/bucket/a837aae1-da54-4a9f-8fb7-7dd56ee0fdbd.png"
-                  alt="Организатор"
-                  className="h-10 w-auto object-contain opacity-70"
-                />
+                <a href="https://vk.com/dabblrus" target="_blank" rel="noopener noreferrer">
+                  <img
+                    src="https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/bucket/a837aae1-da54-4a9f-8fb7-7dd56ee0fdbd.png"
+                    alt="Организатор"
+                    className="h-10 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity"
+                  />
+                </a>
                 <p className="text-neutral-600 text-xs">{new Date().getFullYear()} · Открой свою Россию</p>
               </div>
             </div>
@@ -99,11 +101,13 @@ export default function Footer() {
         {/* Лого и копирайт */}
         <div className="flex items-center justify-between pt-2 border-t border-neutral-800">
           <p className="text-neutral-600 text-xs">{new Date().getFullYear()} · Открой свою Россию</p>
-          <img
-            src="https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/bucket/a837aae1-da54-4a9f-8fb7-7dd56ee0fdbd.png"
-            alt="Организатор"
-            className="h-7 w-auto object-contain opacity-60"
-          />
+          <a href="https://vk.com/dabblrus" target="_blank" rel="noopener noreferrer">
+            <img
+              src="https://cdn.poehali.dev/projects/0fd730b6-ff99-47c2-a8cd-b94909d66811/bucket/a837aae1-da54-4a9f-8fb7-7dd56ee0fdbd.png"
+              alt="Организатор"
+              className="h-7 w-auto object-contain opacity-60 hover:opacity-90 transition-opacity"
+            />
+          </a>
         </div>
       </div>
     </div>
