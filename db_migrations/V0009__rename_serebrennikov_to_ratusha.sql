@@ -1,0 +1,1 @@
+UPDATE t_p65760950_mystery_box_initiati.users SET name = 'Игорь Ратуша, главный редактор' WHERE id = 1;
